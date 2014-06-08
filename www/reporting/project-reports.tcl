@@ -59,13 +59,16 @@ if {![im_permission $current_user_id "view_projects_all"]} {
 
 # Check for the default survey name if survey_id was not specified
 if {"" == $survey_id} {
-    set default_survey_name [parameter::get_from_package_key -package_key "intranet-simple-survey" -parameter DefaultProjectReportSurveyName -default "Project Status Report"]
+    set default_survey_name [parameter::get_from_package_key -package_key "intranet-simple-survey" -parameter DefaultProjectReportSurveyName -default "Project Manager Weekly Report"]
     set survey_id [db_string default_survey "select survey_id from survsimp_surveys where lower(trim(name)) = lower(trim(:default_survey_name))" -default ""]
 }
 
-if {"" == $survey_id} { set survey_id [db_string last_survey "select min(survey_id) from survsimp_surveys" -default ""] }
+if {"" == $survey_id} {
+    set survey_id [db_string first_survey "select min(survey_id) from survsimp_surveys where enabled_p = 't'" -default ""]
+}
+
 if {"" == $survey_id} { 
-    ad_return_complaint 1 "No surveys defined yet"
+    ad_return_complaint 1 "<b>No surveys defined yet</b>:<br>You need to define at least one active survey in /simple-survey/admin/."
     ad_script_abort
 }
 
@@ -123,7 +126,7 @@ if {[llength $project_id] == 1} {
 # Defaults
 
 if {"" == $start_date} { set start_date [db_string start_date "select now()::date - 90"] }
-if {"" == $end_date} { set end_date [db_string start_date "select now()::date + 3"] }
+if {"" == $end_date} { set end_date [db_string start_date "select now()::date + 7"] }
 
 set project_url "/intranet/projects/view?project_id="
 set one_response_url "/intranet-simple-survey/one-response?response_id="
